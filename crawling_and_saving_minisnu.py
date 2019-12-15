@@ -11,12 +11,13 @@ original_url = 'http://mini.snu.kr/cafe/set/'
 today = datetime.today()
 today_str = today.strftime('%Y%m%d')
 dates_idx = pd.date_range(start='20060103', end=today_str)
+dates_idx = pd.date_range(start='20180522', end=today_str)
 
 curr_path = os.path.dirname(os.path.abspath('__file__'))
 menu_save_path = f'{curr_path}/school_food_{today_str}.csv'
 
-meal_times = {'아침': 'breakfast', '점심': 'lunch', '저녁': 'dinner'}
-df = pd.DataFrame(columns=['date', 'meal_time', 'cafeteria', 'menu', 'price', 'etc'])
+target_cafe = ['학생회관', '전망대(농대)', '기숙사(919동)', '기숙사(901동)', '302동', '동원관', '자하연']
+df_temp_list = []
 for date_idx in tqdm(dates_idx):
     date = date_idx.strftime('%Y-%-m-%-d')  # 2019-1-4
     url = original_url + date
@@ -30,14 +31,14 @@ for date_idx in tqdm(dates_idx):
     for menu_info in menu_table:
         menu_contents = menu_info.contents
         # check meal time
-        if menu_contents[0].text in meal_times:
-            meal_time = meal_times[menu_contents[0].text]
+        if menu_contents[0].text in ['아침', '점심', '저녁']:
+            meal_time = menu_contents[0].text
         else:
             # extract cafeteria/price infomation
             cafeteria = menu_info.find(class_='head bg_menu2').get_text()
             prices = [price.get_text(strip=True) for price in menu_info.find_all(class_='price')]
 
-            # extract menu information
+            # extract (relatively new) menu information
             if prices or (cafeteria == '302동'):
                 menu_content = str(menu_contents[-1])
                 menus_dirty = menu_content.split('</span>')
@@ -49,12 +50,12 @@ for date_idx in tqdm(dates_idx):
                     # if '할랄' in menu_dirty:
                     #     etcs.append('halal')
                     if not menu_dirty.startswith('<'):
-                        if '🐖' in menu_dirty:
+                        if '🐖🥗' in menu_dirty:
+                            etcs.append('vegetarian')
+                        elif '🐖' in menu_dirty:
                             etcs.append('no_pork')
                         elif '🥗' in menu_dirty:
                             etcs.append('vegetarian')
-                        else:
-                            etcs.append('N/A')  # TODO: unite N/A & None value
                         menu = menu_dirty.split('<')[0].strip()
 
                         # handle exception - 302 cafeteria
@@ -66,11 +67,13 @@ for date_idx in tqdm(dates_idx):
                         else:
                             menus.append(menu)
 
-                # append row to dataframe
                 for (menu, price, etc) in zip(menus, prices, etcs):
                     df_row = pd.DataFrame([[date, meal_time, cafeteria, menu, price, etc]],
                                           columns=['date', 'meal_time', 'cafeteria', 'menu', 'price', 'etc'])
-                    df = df.append(df_row)
+                    # filter target cafeterias
+                    if cafeteria in target_cafe:
+                        df_temp_list.append(df_row)
+            # extract (relatively old) menu information
             else:
                 menus = []
                 menus_html = menu_info.find_all(class_='menu')
@@ -82,6 +85,9 @@ for date_idx in tqdm(dates_idx):
                 for menu in menus:
                     df_row = pd.DataFrame([[date, meal_time, cafeteria, menu, None, None]],
                                           columns=['date', 'meal_time', 'cafeteria', 'menu', 'price', 'etc'])
-                    df = df.append(df_row)
-
+                    if cafeteria in target_cafe:
+                        df_temp_list.append(df_row)
+# list to pandas dataframe
+df = pd.concat(df_temp_list, ignore_index=True, copy=False, sort=False)
+# save dataframe
 df.to_csv(menu_save_path, index=False)
