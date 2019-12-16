@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 import networkx as nx
 
-csv_path = '/Users/ginny/Documents/GitHub/SNU-menu-visualization/school_food_20191215.csv'
-target_cafe = ['학생회관', '전망대(농대)', '기숙사(919동)', '기숙사(901동)', '302동', '동원관', '자하연']
+csv_path = 'C:/Users/toooo/Documents/GitHub/SNU-menu-visualization/file/school_food_20191215.csv'
+target_cafe = ['학생회관', '전망대(농대)', '기숙사(919동)', '302동', '동원관', '자하연']
 
 def filter_menu(menu_str):
     menu_str = re.sub('[^ ㄱ-ㅣ가-힣]+', '', menu_str).replace('\n', '').replace('🥗', '')
@@ -50,7 +50,6 @@ df = df.dropna(subset=['menu'])
 df_a = df[df.cafeteria == '학생회관'].drop('cafeteria', axis=1)
 df_b = df[df.cafeteria == '전망대(농대)'].drop('cafeteria', axis=1)
 df_c = df[df.cafeteria == '기숙사(919동)'].drop('cafeteria', axis=1)
-df_d = df[df.cafeteria == '기숙사(901동)'].drop('cafeteria', axis=1)
 df_e = df[df.cafeteria == '302동'].drop('cafeteria', axis=1)
 df_f = df[df.cafeteria == '동원관'].drop('cafeteria', axis=1)
 df_g = df[df.cafeteria == '자하연'].drop('cafeteria', axis=1)
@@ -59,20 +58,23 @@ df_g = df[df.cafeteria == '자하연'].drop('cafeteria', axis=1)
 df_menu_a = df_a.set_index(['date', 'meal_time'])['menu']
 df_menu_b = df_b.set_index(['date', 'meal_time'])['menu']
 df_menu_c = df_c.set_index(['date', 'meal_time'])['menu']
-df_menu_d = df_d.set_index(['date', 'meal_time'])['menu']
 df_menu_e = df_e.set_index(['date', 'meal_time'])['menu']
 df_menu_f = df_f.set_index(['date', 'meal_time'])['menu']
 df_menu_g = df_g.set_index(['date', 'meal_time'])['menu']
 
 # calculate levenshtein_distance between two cafateria menu
 
-df_menus = [df_menu_a, df_menu_b, df_menu_c, df_menu_d, df_menu_e, df_menu_f, df_menu_g]
+df_menus = [df_menu_a, df_menu_b, df_menu_c, df_menu_e, df_menu_f, df_menu_g]
+
+
 def subset_list(L):
     for i in range(len(L)):
         j = i + 1
         while j < len(L):
             yield (L[i], L[j])
             j += 1
+
+
 distances = {}
 cafeteria_pairs = list(subset_list(target_cafe))
 for i, (menus_1, menus_2) in enumerate(subset_list(df_menus)):
@@ -120,3 +122,11 @@ nx.draw_networkx_labels(G, pos, font_size=10, font_family='AppleGothic')
 plt.axis('off')
 plt.show()
 # %%
+
+dist = []
+index = []
+for pair in cafeteria_pairs:
+    dist.append(1 / distances[pair].mean().mean())
+    index.append(f'{pair[0]} ~ {pair[1]}')
+df = pd.DataFrame(dist, index=index)
+df.to_csv('dist_df.csv', header=False, encoding='euc-kr')

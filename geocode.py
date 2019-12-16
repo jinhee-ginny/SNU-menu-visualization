@@ -4,7 +4,7 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import matplotlib.font_manager as fm
+import numpy as np
 
 mpl.rcParams['font.family'] = 'Gulim'
 
@@ -12,14 +12,14 @@ GEOCODE_API_URL = 'https://maps.googleapis.com/maps/api/geocode/json'
 DIRECTIONS_API_URL = 'https://maps.googleapis.com/maps/api/directions/json'
 API_KEY = 'AIzaSyAnmA7OpmbRdkOK-Ala2S-IRsQYTWLiIQM'
 
-addresses = ['서울특별시 신림동 서울대학교 동원생활관',
-             '서울특별시 신림동 서울대학교 학생회관',
-             '서울특별시 신림동 서울대학교 자하연식당',
+addresses = ['서울특별시 신림동 서울대학교 학생회관',
              '서울특별시 신림동 서울대학교 제3식당',
+             '서울특별시 봉천동 서울대학교 기숙사신관',
              '서울특별시 신림동 서울대학교 제2공학관',
-             '서울특별시 봉천동 서울대학교 기숙사신관']
+             '서울특별시 신림동 서울대학교 동원생활관',
+             '서울특별시 신림동 서울대학교 자하연식당']
 
-abb = ['동원관', '학생회관', '자하연', '전망대(농대)', '302동', '기숙사(919동)']
+abb = ['학생회관', '전망대(농대)', '기숙사(919동)', '302동', '동원관', '자하연']
 
 gps = dict()
 
@@ -87,3 +87,9 @@ nx.draw_networkx_edges(G, pos, edgelist=esmall,
 nx.draw_networkx_labels(G, pos, font_size=10, font_family='Gulim')
 plt.axis('off')
 plt.show()
+
+df = pd.read_csv('dist_df.csv', encoding='euc-kr', header=None)
+df[2] = weights
+df.to_csv('dist_df_2.csv', header=False, encoding='euc-kr', index=False)
+
+np.corrcoef(df[1], df[2])
